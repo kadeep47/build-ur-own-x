@@ -37,12 +37,35 @@ def main():
                     elif args == "type":
                         print(f"{args} is a sheel builtin cmd \n")
                     else :
-                        print(f"{args} : can be found at location need to implement this  \n")
+                        cmd_found = False
+                        for path in os.getenv("PATH").split(":"):
+                            if os.path.isdir(path): 
+                                for file_name in os.listdir(path):
+                                    if file_name == cmd_string[1]:
+                                        print(f" {cmd_string[1]} found at  {path}")
+                                        cmd_found = True
+                                        break
+                            if cmd_found:
+                                break
+                        if not cmd_found:
+                            print(f"{args} : can be found at location need to implement this  \n")
+        else:
+            cmd_found = False
+            for path in os.getenv("PATH").split(os.pathsep):
+                if os.path.isdir(path):
+                    for file_name in os.listdir(path):
+                        if file_name == cmd_string[0] ;
+                            result =  subprocess.run(cmd_string, capture_output = True, text = True)
+                            print(result.stdout,end = "")
+                            cmd_found = True
+                            break
+                if cmd_found : 
+                    break
+
+            if not cmd_found :               
+                print( " {cmd_string} cmd not found")
 
 
-        sys.stderr.write(f"{cmd_string} not defined\n")
-
-    
 
 
 logging.warning(f"name where it's running {__name__}")
