@@ -1,73 +1,101 @@
 import os
 import sys
-import time
 import logging
 import subprocess
-import signal
-import threading
-import json
+
+
+def setup_logging():
+    logging.basicConfig(
+        level=logging.WARNING,
+        format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+
+
+def find_in_path(cmd_name):
+    """
+    Search for a command in PATH directories. Return the full path if found, else None.
+    """
+    for path_dir in os.getenv("PATH", "").split(os.pathsep):
+        candidate = os.path.join(path_dir, cmd_name)
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
+    return None
 
 
 def main():
-    logging.warning(f"inside main")
+    setup_logging()
+    logging.warning("Starting shell emulator")
+
     while True:
-        # logging.warning(f"infinte true loop")
-        sys.stdout.write(" Hello $:")
-        sys.stdout.flush()
-        cmd = input()
+        try:
+            # Prompt the user
+            cmd_line = input("Hello $: ")
+        except EOFError:
+            print()  # newline
+            logging.warning("EOF received, exiting")
+            break
+        except KeyboardInterrupt:
+            print()  # newline
+            logging.warning("KeyboardInterrupt, exiting")
+            break
 
-        cmd_string = cmd.split(" ")
-        logging.warning(f" current base cmd {cmd_string[0]}")
-
-        if cmd_string[0] ==  "exit":
-            if  len(cmd_string) > 1 and cmd_string[1].isdigit: 
-                sys.exit(int(cmd_string[1]))
-            else:
-                sys.exit(int(0))
-        
-        if cmd_string[0] == "echo":
-            sys.stdout.write("".join(cmd_string[1])  + "\n")
+        cmd_line = cmd_line.strip()
+        if not cmd_line:
+            print("No command entered, try again.")
             continue
-        
-        if cmd_string[0] == "type":
-            if (len(cmd_string ) > 1):
-                for args in cmd_string[1:]:
-                    if args == "echo":
-                        print(f"{args} is a sheel builtin cmd \n")
-                    elif args == "type":
-                        print(f"{args} is a sheel builtin cmd \n")
-                    else :
-                        cmd_found = False
-                        for path in os.getenv("PATH").split(":"):
-                            if os.path.isdir(path): 
-                                for file_name in os.listdir(path):
-                                    if file_name == cmd_string[1]:
-                                        print(f" {cmd_string[1]} found at  {path}")
-                                        cmd_found = True
-                                        break
-                            if cmd_found:
-                                break
-                        if not cmd_found:
-                            print(f"{args} : can be found at location need to implement this  \n")
-        else:
-            cmd_found = False
-            for path in os.getenv("PATH").split(os.pathsep):
-                if os.path.isdir(path):
-                    for file_name in os.listdir(path):
-                        if file_name == cmd_string[0] ;
-                            result =  subprocess.run(cmd_string, capture_output = True, text = True)
-                            print(result.stdout,end = "")
-                            cmd_found = True
-                            break
-                if cmd_found : 
-                    break
 
-            if not cmd_found :               
-                print( " {cmd_string} cmd not found")
+        parts = cmd_line.split()
+        cmd = parts[0]
+        args = parts[1:]
+        logging.warning(f"Received command: {cmd} with args: {args}")
+
+        # Builtin: exit
+        if cmd == "exit":
+            exit_code = 0
+            if args and args[0].isdigit():
+                exit_code = int(args[0])
+            logging.warning(f"Exiting with code {exit_code}")
+            sys.exit(exit_code)
+
+        # Builtin: echo
+        if cmd == "echo":
+            message = " ".join(args)
+            print(message)
+            continue
+
+        # Builtin: type
+        if cmd == "type":
+            if not args:
+                print("Usage: type <command> [<command> ...]")
+                continue
+            for name in args:
+                if name in ("echo", "type", "exit"):
+                    print(f"{name} is a shell builtin command")
+                else:
+                    path_found = find_in_path(name)
+                    if path_found:
+                        print(f"{name} found at {path_found}")
+                    else:
+                        print(f"{name}: command not found in PATH")
+            continue
+
+        # External commands
+        exe_path = find_in_path(cmd)
+        if exe_path:
+            try:
+                result = subprocess.run([exe_path] + args,
+                                        capture_output=True, text=True)
+                if result.stdout:
+                    print(result.stdout, end="")
+                if result.stderr:
+                    print(result.stderr, file=sys.stderr, end="")
+            except Exception as e:
+                print(f"Error running command '{cmd}': {e}")
+            continue
+
+        # Command not found
+        print(f"{cmd}: command not found")
 
 
-
-
-logging.warning(f"name where it's running {__name__}")
 if __name__ == "__main__":
     main()
