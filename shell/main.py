@@ -15,9 +15,15 @@ def main():
         sys.stdout.write(" Hello $:")
         sys.stdout.flush()
         cmd = input()
+
+        cmd_string = cmd.split(" ")
+        if cmd_string[0] ==  "exit":
+            if cmd_string[1].isdigit and  len(cmd_string[1]) > 1: 
+                sys.exit(int(cmd_string[1]))
+
         logging.warning(f" current cmd {cmd}")
         if cmd  == "exit()":
-            exit
+            sys.exit(int(0));
         else: 
             print(f" {cmd} : command not found")
 
