@@ -39,3 +39,4 @@ exit() as keyword to exit the loop
 split the code with split() in python 
 map system call with the input comming from user
 
+Path variable :  shell where it look for executable file's 
