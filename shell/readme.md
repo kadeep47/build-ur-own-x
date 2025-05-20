@@ -12,12 +12,22 @@ read
 interpt // parse 
 execute 
 generate output 
-look back to the top 
+look back to the top (REPL (read -> evaluate -> print -> loop ))
 
 # 3 standard stress 
 stdin 
 stdout 
 seterror
+
+
+
+
+- $? is a special shell variable that holds the exit status (return code) of the most recently executed command.
+- echo prints the value of $? to the termin
+- 0 → Command executed successfully.
+- 1 → General error.
+- 2 → Misuse of shell built-ins.
+- 127 → Command not found.
 
 
 infinite loop running taking 
