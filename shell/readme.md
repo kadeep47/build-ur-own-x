@@ -10,3 +10,6 @@ input from user
 exit() as keyword to exit the loop
 split the code with split() in python 
 map system call with the input comming from user
+
+
+https://github.com/kadeep47/build-your-own-x?tab=readme-ov-file
