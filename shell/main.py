@@ -17,15 +17,16 @@ def main():
         cmd = input()
 
         cmd_string = cmd.split(" ")
+        logging.warning(f" current base cmd {cmd_string[0]}")
+
         if cmd_string[0] ==  "exit":
             if cmd_string[1].isdigit and  len(cmd_string[1]) > 1: 
                 sys.exit(int(cmd_string[1]))
+        elif cmd_string[1] == "echo":
+            sys.stdout.write("".join(cmd_string[1])  + "\n")
 
-        logging.warning(f" current cmd {cmd}")
-        if cmd  == "exit()":
-            sys.exit(int(0));
-        else: 
-            print(f" {cmd} : command not found")
+        
+        
 
 
 logging.warning(f"name where it's running {__name__}")
