@@ -14,6 +14,7 @@ execute
 generate output 
 look back to the top 
 
+# 3 standard stress 
 stdin 
 stdout 
 seterror
