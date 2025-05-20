@@ -20,13 +20,29 @@ def main():
         logging.warning(f" current base cmd {cmd_string[0]}")
 
         if cmd_string[0] ==  "exit":
-            if cmd_string[1].isdigit and  len(cmd_string[1]) > 1: 
+            if  len(cmd_string) > 1 and cmd_string[1].isdigit: 
                 sys.exit(int(cmd_string[1]))
-        elif cmd_string[1] == "echo":
+            else:
+                sys.exit(int(0))
+        
+        if cmd_string[0] == "echo":
             sys.stdout.write("".join(cmd_string[1])  + "\n")
+            continue
+        
+        if cmd_string[0] == "type":
+            if (len(cmd_string ) > 1):
+                for args in cmd_string[1:]:
+                    if args == "echo":
+                        print(f"{args} is a sheel builtin cmd \n")
+                    elif args == "type":
+                        print(f"{args} is a sheel builtin cmd \n")
+                    else :
+                        print(f"{args} : can be found at location need to implement this  \n")
 
-        
-        
+
+        sys.stderr.write(f"{cmd_string} not defined\n")
+
+    
 
 
 logging.warning(f"name where it's running {__name__}")
