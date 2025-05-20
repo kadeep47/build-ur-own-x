@@ -6,6 +6,8 @@ yt link : https://www.youtube.com/watch?v=55cohFUPZGY
 build a single app that will sever as python interpreter shell 
 
 
+
+
 job of shell 
 prompt 
 read
@@ -19,6 +21,7 @@ stdin
 stdout 
 seterror
 
+The line sys.stdout.flush() in Python is used to forcefully flush the output buffer, ensuring that any pending output is immediately written to the terminal or output stream.
 
 
 
