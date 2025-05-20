@@ -5,6 +5,15 @@ yt link : https://www.youtube.com/watch?v=55cohFUPZGY
 
 build a single app that will sever as python interpreter shell 
 
+
+job of shell 
+prompt 
+read
+interpt // parse 
+execute 
+generate output 
+look back to the top 
+
 stdin 
 stdout 
 seterror
