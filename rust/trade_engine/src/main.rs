@@ -35,6 +35,7 @@ impl Order {
     }
 }
 
+#[derive(Debug)]
 struct Limit {
     price:  Price,
     orders: Vec<Order>,
