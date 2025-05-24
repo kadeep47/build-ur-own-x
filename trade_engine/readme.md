@@ -1,7 +1,7 @@
 
 
 
-Building a trading engine in Rust 
+Building a trading engine in Rust (order matching)
 
 
 learning order book 
