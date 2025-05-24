@@ -40,8 +40,21 @@ struct Limit {
     orders: Vec<Order>,
 }
 
+impl Limit{
+    fn new(price : f64)-> Limit {
+        limit{
+            price : Price :: new(price),
+            orders : Vec :: new(),
+        }
+    }
+}
+
 fn main() {
     let price = Price::new(50.77);
     println!("Price broken down: {:?}", price);
+
+
+    let limit = Limit::new(65.35);
+    println!("Limit is ", Limit);
     println!("Hello, world!");
 }
