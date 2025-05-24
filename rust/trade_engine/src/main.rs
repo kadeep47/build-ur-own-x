@@ -24,6 +24,7 @@ enum BidOrAsk {
     Ask,
 }
 
+#[derive(Debug)]
 struct Order {
     size:      f64,
     bid_or_ask: BidOrAsk,
