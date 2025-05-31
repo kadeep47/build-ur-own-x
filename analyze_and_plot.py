@@ -1,99 +1,155 @@
+# analyze_and_plot.py
+
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from datetime import datetime
 
-def parse_markdown_table(filepath):
+def analyze_from_csv(filepath="learning_progress.csv"):
     """
-    Parse the first Markdown table found in the file and return a DataFrame.
-    Expects the columns: 
-        "Topic", "Weightage (%)", 
-        "Planned Start", "Planned End", 
-        "Actual Start", "Actual End"
-    """
-    with open(filepath, 'r') as f:
-        lines = f.readlines()
-
-    table_lines = []
-    is_table = False
-    for line in lines:
-        stripped = line.strip()
-        # Identify table rows by the leading and trailing '|'
-        if stripped.startswith("|") and stripped.endswith("|"):
-            # Skip the separator row (|---|---|...|)
-            if set(stripped.replace("|", "").replace("-", "").strip()) == set():
-                continue
-            table_lines.append(stripped)
-            is_table = True
-        elif is_table:
-            # Stop once the table section ends (first non-table line after starting)
-            break
-
-    # Convert the Markdown rows into a list of lists
-    rows = [row.strip("|").split("|") for row in table_lines]
-    header = [h.strip() for h in rows[0]]            # first row = column names
-    data = [[cell.strip() for cell in r] for r in rows[1:]]  # remaining rows = data
-
-    df = pd.DataFrame(data, columns=header)
-    return df
-
-def analyze_and_plot(filepath="learning_progress.md"):
-    """
-    1. Parses the Markdown file.
-    2. Converts columns to proper types.
-    3. Calculates planned vs. actual durations.
-    4. Computes productivity rate = Weightage (%) / Actual Days.
-    5. Plots:
-       - bar chart: Productivity Rate by Topic
-       - bar chart: Cumulative Completion (%)
-    6. Saves:
-       - productivity_rate_by_topic.png
-       - cumulative_completion.png
+    1. Read the CSV with columns:
+       Topic, Weightage (%), Planned Start, Planned End,
+       Actual Start, Actual End, Level
+    2. Compute each topic's Actual Days and Productivity (%/day).
+    3. Build a date range from the earliest Planned Start → latest Planned End.
+    4. For each day in that range, calculate:
+         - expected cumulative %  (linear interpolation across planned durations)
+         - actual cumulative %    (linear interpolation across actual durations)
+    5. Plot two overlaid line charts:
+         • Expected Cumulative % (blue)
+         • Actual   Cumulative % (red)
+       and save as "expected_vs_actual_progress.png".
+    6. Build a Gantt‐style chart: one horizontal bar for each topic’s Planned dates
+       (light gray), and one overlaid bar for each topic’s Actual dates (dark gray).
+       Save as "gantt_timeline.png".
     """
 
-    # 1) Parse the table
-    df = parse_markdown_table(filepath)
+    # ----- 1) Load CSV -----
+    df = pd.read_csv(filepath)
 
-    # 2) Convert types
+    # Convert all relevant columns to datetime
+    for col in ["Planned Start", "Planned End", "Actual Start", "Actual End"]:
+        df[col] = pd.to_datetime(df[col], format="%Y-%m-%d")
+
+    # Ensure Weightage is a float
     df["Weightage (%)"] = df["Weightage (%)"].astype(float)
-    df["Planned Start"] = pd.to_datetime(df["Planned Start"], format="%Y-%m-%d")
-    df["Planned End"]   = pd.to_datetime(df["Planned End"],   format="%Y-%m-%d")
-    df["Actual Start"]  = pd.to_datetime(df["Actual Start"],  format="%Y-%m-%d", errors="coerce")
-    df["Actual End"]    = pd.to_datetime(df["Actual End"],    format="%Y-%m-%d", errors="coerce")
 
-    # 3) Calculate durations (adding +1 day to include both endpoints)
-    df["Planned Days"] = (df["Planned End"] - df["Planned Start"]).dt.days + 1
-    df["Actual Days"]  = (df["Actual End"] - df["Actual Start"]).dt.days + 1
-
-    # 4) Compute productivity = weightage / actual days (as % per day)
+    # ----- 2) Compute "Actual Days" and "Productivity (%/day)" -----
+    df["Actual Days"] = (df["Actual End"] - df["Actual Start"]).dt.days + 1
     df["Productivity (%/day)"] = df["Weightage (%)"] / df["Actual Days"]
 
-    # Determine which topics are completed (Actual End ≤ Today)
-    today = datetime.now().date()
-    df["Completed"] = df["Actual End"].dt.date <= today
+    # ----- 3) Build a full date range for plotting cumulative progress -----
+    overall_start = df["Planned Start"].min()
+    overall_end   = df["Planned End"].max()
+    full_dates = pd.date_range(start=overall_start, end=overall_end)
 
-    # Total weight of completed topics → cumulative completion %
-    total_completed_weight = df.loc[df["Completed"], "Weightage (%)"].sum()
-    completion_percent = total_completed_weight  # since weights sum to 100
+    expected_cum = []
+    actual_cum   = []
 
-    # 5) Plot Productivity Rate per Topic
+    # ----- 4) For each date, sum up "expected" and "actual" contributions -----
+    for single_date in full_dates:
+        exp_sum = 0.0
+        act_sum = 0.0
+
+        # Loop through each topic
+        for _, row in df.iterrows():
+            p_start, p_end    = row["Planned Start"], row["Planned End"]
+            a_start, a_end    = row["Actual Start"], row["Actual End"]
+            weight            = row["Weightage (%)"]
+
+            # Planned duration (days)
+            planned_days = (p_end - p_start).days + 1
+            if single_date >= p_end:
+                # Entire weight counts as completed
+                exp_sum += weight
+            elif p_start <= single_date < p_end:
+                # Partially complete based on how far into planned period we are
+                days_into_planned = (single_date - p_start).days + 1
+                exp_sum += weight * (days_into_planned / planned_days)
+
+            # Actual duration (days)
+            actual_days = (a_end - a_start).days + 1
+            if single_date >= a_end:
+                # Entire weight counts as completed
+                act_sum += weight
+            elif a_start <= single_date < a_end:
+                # Partially complete based on how far into actual period we are
+                days_into_actual = (single_date - a_start).days + 1
+                act_sum += weight * (days_into_actual / actual_days)
+
+        expected_cum.append(exp_sum)
+        actual_cum.append(act_sum)
+
+    # ----- 5) Plot Expected vs. Actual Cumulative Progress (Line Chart) -----
     plt.figure(figsize=(10, 5))
-    plt.bar(df["Topic"], df["Productivity (%/day)"])
-    plt.xlabel("Topic")
-    plt.ylabel("Productivity (% per day)")
-    plt.title("Productivity Rate by Topic")
+    plt.plot(full_dates, expected_cum, color="blue", label="Expected Cumulative %")
+    plt.plot(full_dates, actual_cum,   color="red",  label="Actual Cumulative %")
+    plt.fill_between(full_dates, expected_cum, color="blue", alpha=0.1)
+    plt.fill_between(full_dates, actual_cum,   color="red",  alpha=0.1)
+
+    plt.xlabel("Date")
+    plt.ylabel("Cumulative Completion (%)")
+    plt.title("Expected vs. Actual Learning Progress")
+    plt.legend()
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
-    plt.savefig("productivity_rate_by_topic.png")
+    plt.savefig("expected_vs_actual_progress.png")
     plt.show()
 
-    # Plot Cumulative Completion
-    plt.figure(figsize=(6, 4))
-    plt.bar(["Overall Completion"], [completion_percent])
-    plt.ylim(0, 100)
-    plt.ylabel("Completion (%)")
-    plt.title("Cumulative Learning Completion")
+    # ----- 6) Plot Gantt‐Style Timeline (Planned vs. Actual for each topic) -----
+    plt.figure(figsize=(10, 6))
+    for idx, row in df.iterrows():
+        topic    = row["Topic"]
+        p_start  = row["Planned Start"]
+        p_end    = row["Planned End"]
+        a_start  = row["Actual Start"]
+        a_end    = row["Actual End"]
+
+        y = idx  # each topic on its own horizontal position
+
+        # Plot planned as a thick, light-gray bar
+        plt.barh(
+            y,
+            (p_end - p_start).days + 1,
+            left=p_start,
+            height=0.4,
+            color="lightgray",
+            label="Planned" if idx == 0 else ""  # only label once
+        )
+
+        # Plot actual as a narrower, dark-gray bar on top
+        plt.barh(
+            y - 0.15,
+            (a_end - a_start).days + 1,
+            left=a_start,
+            height=0.3,
+            color="dimgray",
+            label="Actual" if idx == 0 else ""
+        )
+
+    plt.yticks(range(len(df)), df["Topic"])
+    ax = plt.gca()
+    ax.xaxis_date()
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
+    plt.xticks(rotation=45, ha="right")
+    plt.xlabel("Date")
+    plt.title("Gantt‐Style Timeline: Planned vs. Actual")
+    plt.legend()
     plt.tight_layout()
-    plt.savefig("cumulative_completion.png")
+    plt.savefig("gantt_timeline.png")
     plt.show()
 
-    return df
+    return df, full_dates, expected_cum, actual_cum
+
+
+if __name__ == "__main__":
+    # Running this module will:
+    # 1) Read "learning_progress.csv"
+    # 2) Compute productivity metrics
+    # 3) Save two charts:
+    #      - expected_vs_actual_progress.png
+    #      - gantt_timeline.png
+    #
+    df_metrics, dates, exp_line, act_line = analyze_from_csv("learning_progress.csv")
+    # If you want to inspect the DataFrame of computed metrics:
+    print(df_metrics)
