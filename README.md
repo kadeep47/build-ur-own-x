@@ -2,23 +2,36 @@
 Testing the idea is quickly build something when ever i have enough time
 
 
-TL;DR: Recommended Build Order
-Git & Shell (repo hygiene, basic scripts)
 
-Pick a Language (CLI tools, unit tests, small HTTP client)
+# TL;DR: Recommended Build Order
 
-Relational DB CRUD + REST (Bookstore API with Postgres)
+1. **Git & Shell**  
+   - Repo hygiene, basic scripts  
 
-Raw HTTP Webserver (learn raw sockets → minimal HTTP)
+2. **Pick a Language**  
+   - CLI tools, unit tests, small HTTP client  
 
-Dockerize (Dockerfile + docker-compose for API + DB)
+3. **Relational DB CRUD + REST**  
+   - Bookstore API with Postgres  
 
-Redis (add caching + Pub/Sub)
+4. **Raw HTTP Webserver**  
+   - Learn raw sockets → minimal HTTP  
 
-Kafka (order events, analytics consumer)
+5. **Dockerize**  
+   - Dockerfile + docker-compose for API + DB  
 
-Microservices (split into API/Worker/Notifier, orchestrate with Docker Compose)
+6. **Redis**  
+   - Add caching + Pub/Sub  
 
-Adv Docker &&  Kubernetes (migrate your Compose setup → k8s manifests/Helm)
+7. **Kafka**  
+   - Order events, analytics consumer  
 
-CI/CD, Monitoring, Security, Cloud (complete the end‐to‐end DevOps picture)
+8. **Microservices**  
+   - Split into API/Worker/Notifier  
+   - Orchestrate with Docker Compose  
+
+9. **Adv Docker && Kubernetes**  
+   - Migrate your Compose setup → k8s manifests/Helm  
+
+10. **CI/CD, Monitoring, Security, Cloud**  
+    - Complete the end‐to‐end DevOps picture  
