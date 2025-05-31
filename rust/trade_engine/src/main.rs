@@ -44,7 +44,7 @@ struct Limit {
 
 impl Limit{
     fn new(price : f64)-> Limit {
-        limit{
+        Limit{
             price : Price :: new(price),
             orders : Vec :: new(),
         }
